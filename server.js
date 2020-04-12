@@ -9,17 +9,22 @@ const book = require('./routes/book')
 const auth = require('./routes/auth')
 const userDB = require('./routes/userDB')
 const animalsDB = require('./routes/animalsDB')
+const waveDB = require('./routes/waveDB')
+const cors = require('cors')
 
 
 app.use(logger('dev'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({'extended':'false'}))
 app.use(express.static(path.join(__dirname, 'clientapp-react/build')))
+app.use(cors())
 
 app.use('/api/auth', auth)
 app.use('/api/book', book)
 app.use('/api/userDB', userDB)
 app.use('/api/animalsDB', animalsDB)
+app.use('/api/waveDB', waveDB)
+
 
 
 
