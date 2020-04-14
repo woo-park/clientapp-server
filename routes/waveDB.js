@@ -7,6 +7,8 @@ const Nodes = require('../models/Nodes.js')
 const request = require('request')
 const fs = require('fs')
 let path = require('path')
+const utf8 = require('utf8')
+var cheerio = require('cheerio')
 
 
 // need these two to authenticate
@@ -80,12 +82,14 @@ router.get('/sample', function(req, res) {
   }
 })
 
-let areacode = null
+
 let acc;
 let my_lat_lon = null;
 
 // api/waveDB/data
 router.get('/data', function(req, res) {
+  let areacode = null
+
   if (areacode != null) {
   } else if (areacode == null) {
       areacode = {areacode: 52200}
@@ -137,9 +141,157 @@ router.get('/data', function(req, res) {
       res.send(`${acc}<br\/>${my_lat_lon}`);
     });
 })
+// mini/marine/marine_buoy_cosmos.jsp?stn=22458`
+router.get('/official', function(req, res, next) {
+  let areacode
+  if (req.body) {
+    areacode = req.body
+  } else {
+    areacode = 22457 //default jungmun
+  }
 
+  let uri = `http://www.weather.go.kr/mini/marine/marine_buoy_cosmos.jsp?stn=${22457}`
+  const options = {
+    uri: uri,
+    method: 'GET'
+  }
+
+  let accData = 'Offset,Height,Periods,Date,Time,Temp\n'
+  return new Promise((resolve, reject) => {
+    request(options, function(error, response, html) {
+      if(error) {
+        console.log('err occured while requesting');
+      }
+      let rows = [] // should append here
+
+      $ = cheerio.load(html);
+      let table_develop = $('table[class=table_develop] tbody tr').each((index, element) => {
+        // console.log($(element).html())
+        let tdRow = $(element).find('td')
+        let listRow = []
+
+        tdRow.each((i, item) => {
+          listRow.push($(item).text())
+          /*
+          accData += parseFloat(tdRow[2].text()).toFixed(1).trim()
+          accData += ','
+
+          accData += parseFloat(tdRow[4].text()).toFixed(1).trim()
+          accData += ','
+          console.log(tdRow[0].html())
+
+          if(i == 0) { //time
+            accData += tide[index % 24].toFixed(1)    // adding offset here bc time isn't neccesary now
+            accData += ','
+
+          } else if (i == 1) { //유의
+
+          } else if (i == 2) {  // max
+              accData += parseFloat($(item).text()).toFixed(1).trim()
+              accData += ','
+          } else if (i == 3) {   // average
+
+          } else if (i == 4) {  // periods
+              accData += parseFloat($(item).text()).toFixed(1).trim()
+              accData += '\n'
+          } else if (i == 5) {  // water temp
+
+          }
+          */
+        })
+
+
+          accData += tide[index % 24].toFixed(1)    // adding offset here bc time isn't neccesary now
+          accData += ','
+
+          accData += parseFloat(listRow[2]).toFixed(1).trim()
+          accData += ','
+
+          accData += parseFloat(listRow[4]).toFixed(1).trim()
+          accData += ','
+
+          accData += listRow[0].slice(1,3)    //date
+          accData += ','
+
+          accData += listRow[0].slice(6,8)  //time
+          accData += ','
+
+          accData += listRow[5].trim()      //temp
+          accData += '\n'
+
+        // console.log(listRow)
+        rows.push($(element).html())
+      });
+      // console.log($('table[class=table_develop]').html())
+      res.send(accData)
+    })
+  })
+})
+
+router.post('/official', function(req, res, next) {
+  let areacode
+  if (req.body) {
+    areacode = req.body
+    console.log(areacode,' received')
+  } else {
+    console.log('areacode has not been provided')
+  }
+
+  let uri = `http://www.weather.go.kr/mini/marine/marine_buoy_cosmos.jsp?stn=${areacode.areacode}`
+  const options = {
+    uri: uri,
+    method: 'GET'
+  }
+
+  let accData = 'Offset,Height,Periods,Date,Time,Temp\n'
+  return new Promise((resolve, reject) => {
+    request(options, function(error, response, html) {
+      if(error) {
+        console.log('err occured while requesting');
+      }
+      let rows = [] // should append here
+
+      $ = cheerio.load(html);
+      let table_develop = $('table[class=table_develop] tbody tr').each((index, element) => {
+        // console.log($(element).html())
+        let tdRow = $(element).find('td')
+        let listRow = []
+
+        tdRow.each((i, item) => {
+          listRow.push($(item).text())
+        })
+          accData += tide[index % 24].toFixed(1)    // adding offset here bc time isn't neccesary now
+          accData += ','
+
+          accData += parseFloat(listRow[2]).toFixed(1).trim()
+          accData += ','
+
+          accData += parseFloat(listRow[4]).toFixed(1).trim()
+          accData += ','
+
+          accData += listRow[0].slice(1,3)    //date
+          accData += ','
+
+          accData += listRow[0].slice(6,8)  //time
+          accData += ','
+
+          accData += listRow[5].trim()      //temp
+          accData += '\n'
+
+        // console.log(listRow)
+        rows.push($(element).html())
+      });
+      // console.log($('table[class=table_develop]').html())
+      res.send(accData)
+    })
+  })
+})
+
+
+let tide = [1.4,1.2, 1.0, 0.8, 0.6, 0.4, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.2, 1.0, 0.8, 0.6, 0.4, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
 // api/waveDB/data
 router.post('/data', function(req, res, next) {
+  let areacode
   if(req.body) {
     // req.session.areacode = req.body;
     areacode = req.body
@@ -158,7 +310,7 @@ router.post('/data', function(req, res, next) {
 
             heights = [];
             periods = [];
-            let tide = [1.4,1.2, 1.0, 0.8, 0.6, 0.4, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.2, 1.0, 0.8, 0.6, 0.4, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
+            // let tide = [1.4,1.2, 1.0, 0.8, 0.6, 0.4, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.2, 1.0, 0.8, 0.6, 0.4, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
             //adding tide offset manually
             acc = 'Offset,Height,Period\n'
             for (let i = 1; i < lines.length - 1; i ++) {
