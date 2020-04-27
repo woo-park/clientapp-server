@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+const { v4: uuidv4 } = require('uuid');
 // const User = require('../models/User.js')
 
 const express = require('express');
@@ -24,9 +24,11 @@ router.post('/register', function(req, res) {    // /api/auth/register
     console.log(User)
     let newUser = new User({
       username: req.body.username,
-      password: req.body.password
+      password: req.body.password,
+      userID: uuidv4()
     })
     console.log(newUser)
+
 
     newUser.save(function(err){
       console.log('saving and failed?')
@@ -51,8 +53,10 @@ router.post('/login', function(req, res) {
       user.comparePassword(req.body.password, function(err, isMatch) {
         if (isMatch && !err) {
           let token = jwt.sign(user.toJSON(), settings.secret);
+          // console.log(user, user.userName, user.userID,'ID??', isMatch)  //sometimes false bc some are registered without userIDs
 
-          res.json({success: true, token: 'JWT ' + token});
+
+          res.json({success: true, token: 'JWT ' + token, userName: user.username, userID: user.userID});
         } else {
           res.status(401).send({success: false, msg: 'Authentication failed. Wrong password.'})
         }
@@ -73,8 +77,9 @@ router.get('/', passport.authenticate('jwt', {session: false}), function(req, re
       function(err, result){
       if(err) return next(err);
       console.log(result,'result')
-      let userName = {username: result.username}
-      res.json(userName)
+      let user = {username: result.username, userID: result.userID}
+
+      res.send(user)
     });
   } else {
     return res.status(403).send({success: false, msg: 'Unauthorized.'})

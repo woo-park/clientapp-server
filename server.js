@@ -10,6 +10,10 @@ const auth = require('./routes/auth')
 const userDB = require('./routes/userDB')
 const animalsDB = require('./routes/animalsDB')
 const waveDB = require('./routes/waveDB')
+
+const posts = require('./routes/posts')
+const comments = require('./routes/comments')
+
 const cors = require('cors')
 
 
@@ -24,6 +28,9 @@ app.use('/api/book', book)
 app.use('/api/userDB', userDB)
 app.use('/api/animalsDB', animalsDB)
 app.use('/api/waveDB', waveDB)
+
+app.use('/api/blog', posts)
+app.use('/api/blog', comments)
 
 
 
