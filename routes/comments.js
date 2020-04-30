@@ -32,6 +32,9 @@ router.get('/comments', function(req, res) {  //api/blog/comments
 
 // https://stackoverflow.com/questions/33049707/push-items-into-mongo-array-via-mongoose
 
+// curl -d "text=testText&userID=1234&placeID=3344" https://128.199.93.14/api/blog/comments
+
+
 router.post('/comments', function(req, res) {
   if(!req.body.text || !req.body.userID || !req.body.placeID) {
     res.json({success: false, msg: 'Please finish comment to save.'})
@@ -74,6 +77,8 @@ router.post('/comments', function(req, res) {
 
 
 // curl -d "text=test%2nd&userID=1234&&placeID=3344placeid" http://localhost:3002/api/blog/comments
+
+// curl -d "text=test%2nd&userID=1234&&placeID=3344placeid" https://128.199.93.14/api/blog/comments
 
 router.post('/threads', function(req, res) {
   if(!req.body.text || !req.body.userID || !req.body.placeID || !req.body.commentID) {
